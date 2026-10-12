@@ -19,7 +19,7 @@ class WortEintragServiceTest {
     @Test
     void speichertBereinigtenEintrag() {
         WortEintrag eintrag = new WortEintrag(null, "Hallo", "Eine Begrüßung");
-        when(repository.findeNachWort("Hallo")).thenReturn(Optional.empty());
+        when(repository.findeNachWort("hallo")).thenReturn(Optional.empty());
         when(repository.speichern(eintrag)).thenReturn(new WortEintrag(1L, "Hallo", "Eine Begrüßung"));
 
         WortEintrag gespeichert = service.hinzufuegen(" Hallo ", " Eine Begrüßung ");
@@ -30,16 +30,26 @@ class WortEintragServiceTest {
 
     @Test
     void verhindertDoppelteEintraege() {
-        when(repository.findeNachWort("Hallo")).thenReturn(Optional.of(
+        when(repository.findeNachWort("hallo")).thenReturn(Optional.of(
                 new WortEintrag(1L, "Hallo", "Eine Begrüßung")));
 
         assertThrows(EintragExistiertBereitsException.class,
-                () -> service.hinzufuegen("Hallo", "Noch eine Begrüßung"));
+                () -> service.hinzufuegen("HALLO", "Noch eine Begrüßung"));
     }
 
     @Test
     void findetKeineEintraegeBeiLeeremSuchwort() {
         assertEquals(Optional.empty(), service.suchen("  "));
         verify(repository, org.mockito.Mockito.never()).findeNachWort("  ");
+    }
+
+    @Test
+    void normalisiertSuchwortVorDemRepositoryAufruf() {
+        when(repository.findeNachWort("hallo")).thenReturn(Optional.of(
+                new WortEintrag(1L, "Hallo", "Eine Begrüßung")));
+
+        assertEquals(Optional.of(new WortEintrag(1L, "Hallo", "Eine Begrüßung")),
+                service.suchen(" HALLO "));
+        verify(repository).findeNachWort("hallo");
     }
 }

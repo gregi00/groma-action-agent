@@ -23,7 +23,7 @@ public class WortEintragService {
         if (wort == null || wort.isBlank()) {
             return Optional.empty();
         }
-        return repository.findeNachWort(wort.strip());
+        return repository.findeNachWort(normalisiere(wort));
     }
 
     public WortEintrag hinzufuegen(String wort, String text) {
@@ -35,7 +35,7 @@ public class WortEintragService {
         if (bereinigterText.isBlank()) {
             throw new IllegalArgumentException("Bitte gib einen Text ein.");
         }
-        if (repository.findeNachWort(bereinigtesWort).isPresent()) {
+        if (repository.findeNachWort(normalisiere(bereinigtesWort)).isPresent()) {
             throw new EintragExistiertBereitsException(bereinigtesWort);
         }
         return repository.speichern(new WortEintrag(null, bereinigtesWort, bereinigterText));
