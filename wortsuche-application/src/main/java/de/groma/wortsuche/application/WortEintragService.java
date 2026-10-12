@@ -23,7 +23,7 @@ public class WortEintragService {
         if (wort == null || wort.isBlank()) {
             return Optional.empty();
         }
-        return repository.findeNachWort(wort.strip());
+        return repository.findeNachWort(normalisiere(wort));
     }
 
     public WortEintrag hinzufuegen(String wort, String text) {

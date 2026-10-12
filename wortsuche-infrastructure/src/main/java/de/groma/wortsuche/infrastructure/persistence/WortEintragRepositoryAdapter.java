@@ -25,7 +25,7 @@ public class WortEintragRepositoryAdapter implements WortEintragRepository {
 
     @Override
     public Optional<WortEintrag> findeNachWort(String wort) {
-        return repository.findByWortNormalisiert(WortEintragService.normalisiere(wort))
+        return repository.findByWortNormalisiert(wort)
                 .map(WortEintragRepositoryAdapter::abbilden);
     }
 

@@ -42,4 +42,14 @@ class WortEintragServiceTest {
         assertEquals(Optional.empty(), service.suchen("  "));
         verify(repository, org.mockito.Mockito.never()).findeNachWort("  ");
     }
+
+    @Test
+    void normalisiertSuchwortVorDemRepositoryAufruf() {
+        when(repository.findeNachWort("hallo")).thenReturn(Optional.of(
+                new WortEintrag(1L, "Hallo", "Eine Begrüßung")));
+
+        assertEquals(Optional.of(new WortEintrag(1L, "Hallo", "Eine Begrüßung")),
+                service.suchen(" HALLO "));
+        verify(repository).findeNachWort("hallo");
+    }
 }
