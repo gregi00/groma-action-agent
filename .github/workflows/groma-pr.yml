@@ -24,6 +24,7 @@ jobs:
     outputs:
       number: ${{ steps.pull.outputs.number }}
       base: ${{ steps.pull.outputs.base }}
+      is-private: ${{ steps.pull.outputs.is-private }}
       has-architecture: ${{ steps.groma-baseline.outputs.available }}
     steps:
       - name: Select the pull request
@@ -33,7 +34,7 @@ jobs:
           NUMBER: ${{ inputs.pull-request || github.event.pull_request.number }}
         run: |
           gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" \
-            --jq '"number=\(.number)\nbase=\(.base.sha)\nhead=\(.head.sha)"' >> "$GITHUB_OUTPUT"
+            --jq '"number=\(.number)\nbase=\(.base.sha)\nhead=\(.head.sha)\nis-private=\(.base.repo.private)"' >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ steps.pull.outputs.base }}
@@ -78,11 +79,11 @@ jobs:
         with:
           name: groma-comparison
           path: ${{ steps.map.outputs.output }}
-          retention-days: 1
+          retention-days: 30
 
   publish:
     needs: compare
-    if: needs.compare.outputs.has-architecture == 'true'
+    if: needs.compare.outputs.has-architecture == 'true' && needs.compare.outputs.is-private != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -107,6 +108,45 @@ jobs:
           base: ${{ needs.compare.outputs.base }}
           directory: comparison
           token: ${{ github.token }}
+
+  comment-private-comparison:
+    needs: compare
+    if: needs.compare.result == 'success' && needs.compare.outputs.has-architecture == 'true' && needs.compare.outputs.is-private == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: groma-comparison
+          path: comparison
+      - name: Comment the architecture summary and link the private diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ needs.compare.outputs.number }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          SUMMARY=comparison/architecture/auto/comparison.json
+          FROM=$(jq -er '.from | select(test("^[a-f0-9]{40}$"))' "$SUMMARY")
+          REVISION=$(jq -er '.revision | select(test("^[a-f0-9]{40}$"))' "$SUMMARY")
+          COMPONENTS=$(jq -er '.components | select([.added, .modified, .removed] | all(.[]; type == "number")) | "| Components | \(.added) | \(.modified) | \(.removed) |"' "$SUMMARY")
+          RELATIONSHIPS=$(jq -er '.relationships | select([.added, .modified, .removed] | all(.[]; type == "number")) | "| Relationships | \(.added) | \(.modified) | \(.removed) |"' "$SUMMARY")
+          BODY=$(printf '<!-- groma-comparison -->\n### Groma architecture comparison\n\nThis repository is private, so GitHub Pages preview publishing is unavailable. The complete interactive before/after map is attached as a workflow artifact (available to repository members for 30 days).\n\n| Changes | Added | Modified | Removed |\n| --- | ---: | ---: | ---: |\n%s\n%s\n\n[Download the Groma comparison artifact](%s/%s/actions/runs/%s)\n\nCompared [`%s`](%s/%s/commit/%s) (merge base) with [`%s`](%s/%s/commit/%s).' \
+            "$COMPONENTS" \
+            "$RELATIONSHIPS" \
+            "$GITHUB_SERVER_URL" "$REPOSITORY" "$RUN_ID" \
+            "${FROM:0:7}" "$GITHUB_SERVER_URL" "$REPOSITORY" "$FROM" \
+            "${REVISION:0:7}" "$GITHUB_SERVER_URL" "$REPOSITORY" "$REVISION")
+          COMMENT_ID=$(gh api --paginate "repos/$REPOSITORY/issues/$NUMBER/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- groma-comparison -->"))) | .id' | head -n 1)
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/$REPOSITORY/issues/comments/$COMMENT_ID" --method PATCH -f body="$BODY"
+          else
+            gh api "repos/$REPOSITORY/issues/$NUMBER/comments" --method POST -f body="$BODY"
+          fi
 
   explain-unavailable-baseline:
     needs: compare
