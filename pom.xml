@@ -19,6 +19,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-boot.version>3.4.5</spring-boot.version>
+        <spring-boot.run.skip>true</spring-boot.run.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
@@ -50,6 +51,9 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                    <configuration>
+                        <skip>${spring-boot.run.skip}</skip>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
