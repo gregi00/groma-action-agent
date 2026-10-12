@@ -50,6 +50,7 @@
             <span class="count" th:text="${eintraege.size()} + ' Einträge'">0 Einträge</span>
         </div>
         <p class="muted empty" th:if="${eintraege.isEmpty()}">Hier erscheinen deine gespeicherten Wörter.</p>
+        <div id="entry-list">
         <article class="entry" th:each="eintrag : ${eintraege}">
             <th:block th:if="${zuBearbeitenderEintrag != null and zuBearbeitenderEintrag.id == eintrag.id}">
                 <form class="edit-form" method="post" th:action="@{/eintraege/{id}/bearbeiten(id=${eintrag.id})}">
@@ -78,7 +79,9 @@
                 </div>
             </th:block>
         </article>
+        </div>
     </section>
 </main>
+<script th:src="@{/word-categories.js}" defer></script>
 </body>
 </html>

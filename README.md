@@ -2,6 +2,8 @@
 
 Eine kleine Spring-Boot-Webanwendung, in der Wörter mit einem zugehörigen Text gespeichert, gesucht und gelöscht werden können. Die Suche ignoriert Groß- und Kleinschreibung. Einträge werden in einer lokalen H2-Dateidatenbank gespeichert.
 
+Gespeicherte Wörter werden anhand einfacher Schlüsselwörter im Erklärungstext automatisch nach Themen gruppiert. Die Gruppen lassen sich auf- und zuklappen; Texte ohne erkannte Themenwörter erscheinen unter „Allgemein“. Die lokale Heuristik benötigt keine externe KI und kann Themen nicht in jedem Text zuverlässig erkennen.
+
 ## Starten
 
 Voraussetzung: Java 21 oder neuer und Maven.
