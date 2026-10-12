@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wortsuche</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body>
+<main class="container">
+    <header>
+        <span class="eyebrow">DEIN PERSÖNLICHES WÖRTERBUCH</span>
+        <h1>Wortsuche</h1>
+        <p>Finde gespeicherte Erklärungen oder ergänze deine Sammlung.</p>
+    </header>
+
+    <p class="notice success" th:if="${erfolg}" th:text="${erfolg}"></p>
+    <p class="notice error" th:if="${fehler}" th:text="${fehler}"></p>
+
+    <section class="panel search-panel">
+        <h2>Ein Wort nachschlagen</h2>
+        <form class="search-form" method="get" th:action="@{/}">
+            <label class="visually-hidden" for="suchwort">Suchwort</label>
+            <input id="suchwort" name="wort" placeholder="Zum Beispiel: Zuversicht"
+                   th:value="${wort}" required>
+            <button type="submit">Suchen</button>
+        </form>
+        <div class="result" th:if="${sucheAktiv}">
+            <h3 th:text="${suchergebnis != null ? suchergebnis.wort : 'Kein Treffer'}">Ergebnis</h3>
+            <p th:if="${suchergebnis != null}" th:text="${suchergebnis.text}"></p>
+            <p class="muted" th:if="${suchergebnis == null}">Für dieses Wort ist noch kein Text gespeichert.</p>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Neuen Eintrag hinzufügen</h2>
+        <form class="entry-form" method="post" th:action="@{/eintraege}">
+            <label for="wort">Wort</label>
+            <input id="wort" name="wort" maxlength="120" placeholder="Ein Wort" required>
+            <label for="text">Zugehöriger Text</label>
+            <textarea id="text" name="text" rows="4" maxlength="5000"
+                      placeholder="Was soll bei der Suche angezeigt werden?" required></textarea>
+            <button type="submit">Eintrag speichern</button>
+        </form>
+    </section>
+
+    <section class="entries">
+        <div class="section-heading">
+            <h2>Gespeicherte Wörter</h2>
+            <span class="count" th:text="${eintraege.size()} + ' Einträge'">0 Einträge</span>
+        </div>
+        <p class="muted empty" th:if="${eintraege.isEmpty()}">Hier erscheinen deine gespeicherten Wörter.</p>
+        <article class="entry" th:each="eintrag : ${eintraege}">
+            <div>
+                <h3 th:text="${eintrag.wort}">Wort</h3>
+                <p th:text="${eintrag.text}">Text</p>
+            </div>
+            <form method="post" th:action="@{/eintraege/loeschen}">
+                <input type="hidden" name="id" th:value="${eintrag.id}">
+                <button class="delete-button" type="submit" th:attr="aria-label='Eintrag ' + ${eintrag.wort} + ' löschen'">Löschen</button>
+            </form>
+        </article>
+    </section>
+</main>
+</body>
+</html>
