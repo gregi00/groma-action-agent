@@ -25,6 +25,38 @@ test('speichert einen Eintrag und findet ihn ohne Beachtung der Großschreibung'
   await expect(page.locator('.result').getByText(definition)).toBeVisible();
 });
 
+test('ordnet Einträge anhand der Erklärungstexte ein und klappt Kategorien auf und zu', async ({ page }) => {
+  const naturalWord = uniqueWord();
+  const generalWord = uniqueWord();
+
+  await page.goto('/');
+  await page.getByLabel('Wort', { exact: true }).fill(naturalWord);
+  await page.getByLabel('Zugehöriger Text').fill('Ein großer Baum wächst im Wald.');
+  await page.getByRole('button', { name: 'Eintrag speichern' }).click();
+
+  await page.getByLabel('Wort', { exact: true }).fill(generalWord);
+  await page.getByLabel('Zugehöriger Text').fill('Eine abstrakte Idee ohne thematische Hinweise.');
+  await page.getByRole('button', { name: 'Eintrag speichern' }).click();
+
+  const natureGroup = page.locator('.entry-category').filter({
+    has: page.getByText('Natur & Umwelt', { exact: true }),
+  });
+  const generalGroup = page.locator('.entry-category').filter({
+    has: page.getByText('Allgemein', { exact: true }),
+  });
+  const naturalEntry = natureGroup.getByRole('article').filter({ hasText: naturalWord });
+  const generalEntry = generalGroup.getByRole('article').filter({ hasText: generalWord });
+
+  await expect(natureGroup).toBeVisible();
+  await expect(naturalEntry).toBeVisible();
+  await expect(generalEntry).toBeVisible();
+
+  await natureGroup.locator('summary').click();
+  await expect(naturalEntry).toBeHidden();
+  await natureGroup.locator('summary').click();
+  await expect(naturalEntry).toBeVisible();
+});
+
 test('verhindert doppelte Einträge', async ({ page }) => {
   const word = uniqueWord();
   const entry = page.getByRole('article').filter({
