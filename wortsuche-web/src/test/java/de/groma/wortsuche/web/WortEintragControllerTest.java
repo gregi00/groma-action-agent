@@ -7,10 +7,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Locale;
+import java.util.UUID;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(
@@ -46,5 +50,27 @@ class WortEintragControllerTest {
         mockMvc.perform(get("/").param("wort", "Zuversicht"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Für dieses Wort ist noch kein Text gespeichert.")));
+    }
+
+    @Test
+    void verhindertDoppelteEintraegeUnabhaengigVonGrossschreibung() throws Exception {
+        String wort = "Playwright-" + UUID.randomUUID();
+
+        mockMvc.perform(post("/eintraege")
+                        .param("wort", wort)
+                        .param("text", "Erster Text"))
+                .andExpect(status().is3xxRedirection());
+
+        mockMvc.perform(post("/eintraege")
+                        .param("wort", wort.toUpperCase(Locale.ROOT))
+                        .param("text", "Zweiter Text"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("fehler",
+                        "Für „" + wort.toUpperCase(Locale.ROOT) + "“ gibt es bereits einen Eintrag."));
+
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Erster Text")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Zweiter Text"))));
     }
 }
