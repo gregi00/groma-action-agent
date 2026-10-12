@@ -3,3 +3,6 @@ target/
 data/
 *.mv.db
 *.trace.db
+node_modules/
+playwright-report/
+test-results/
