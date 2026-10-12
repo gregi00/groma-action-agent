@@ -1,0 +1,117 @@
+name: Groma PR comparison
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull-request:
+        description: PR number to compare after review
+        required: true
+        type: number
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  compare:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      number: ${{ steps.pull.outputs.number }}
+      base: ${{ steps.pull.outputs.base }}
+      has-architecture: ${{ steps.groma-baseline.outputs.available }}
+    steps:
+      - name: Select the pull request
+        id: pull
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ inputs.pull-request || github.event.pull_request.number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" \
+            --jq '"number=\(.number)\nbase=\(.base.sha)\nhead=\(.head.sha)"' >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ steps.pull.outputs.base }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check for an existing Groma baseline
+        id: groma-baseline
+        env:
+          BASE: ${{ steps.pull.outputs.base }}
+        run: |
+          if git cat-file -e "$BASE:groma/index.md" 2>/dev/null; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Find the PR comparison base
+        id: commits
+        if: steps.groma-baseline.outputs.available == 'true'
+        env:
+          BASE: ${{ steps.pull.outputs.base }}
+          HEAD: ${{ steps.pull.outputs.head }}
+        run: |
+          git fetch --no-tags origin "$HEAD"
+          echo "from=$(git merge-base "$BASE" "$HEAD")" >> "$GITHUB_OUTPUT"
+      - uses: MrLesk/groma.md-action@v1
+        id: map
+        if: steps.groma-baseline.outputs.available == 'true'
+        with:
+          groma-version: '0.6.6'
+          from: ${{ steps.commits.outputs.from }}
+          revision: ${{ steps.pull.outputs.head }}
+      - uses: actions/upload-artifact@v4
+        if: steps.groma-baseline.outputs.available == 'true'
+        with:
+          name: groma-comparison
+          path: ${{ steps.map.outputs.output }}
+          retention-days: 1
+
+  publish:
+    needs: compare
+    if: needs.compare.outputs.has-architecture == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      pages: write
+      id-token: write
+    concurrency:
+      group: groma-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.preview.outputs.url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: groma-comparison
+          path: comparison
+      - uses: MrLesk/groma.md-action/publish@v1
+        id: preview
+        with:
+          pull-request: ${{ needs.compare.outputs.number }}
+          base: ${{ needs.compare.outputs.base }}
+          directory: comparison
+          token: ${{ github.token }}
+
+  explain-missing-baseline:
+    needs: compare
+    if: needs.compare.result == 'success' && needs.compare.outputs.has-architecture != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Explain why this pull request has no architecture diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ needs.compare.outputs.number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments" \
+            --method POST \
+            -f body='Groma architecture comparison is not available yet because the base branch has no committed `groma/index.md`. This pull request establishes the baseline; subsequent pull requests will include the before/after architecture map and change summary.'
