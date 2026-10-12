@@ -44,10 +44,12 @@ jobs:
         env:
           BASE: ${{ steps.pull.outputs.base }}
         run: |
-          if git cat-file -e "$BASE:groma/index.md" 2>/dev/null; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
+          if ! git cat-file -e "$BASE:groma/index.md" 2>/dev/null; then
             echo "available=false" >> "$GITHUB_OUTPUT"
+          elif git ls-tree -r --name-only "$BASE" -- groma/systems | grep -Eq '^groma/systems/[^/]+\.md$'; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Find the PR comparison base
         id: commits
@@ -106,7 +108,7 @@ jobs:
           directory: comparison
           token: ${{ github.token }}
 
-  explain-missing-baseline:
+  explain-unavailable-baseline:
     needs: compare
     if: needs.compare.result == 'success' && needs.compare.outputs.has-architecture != 'true'
     runs-on: ubuntu-latest
@@ -120,4 +122,4 @@ jobs:
         run: |
           gh api "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments" \
             --method POST \
-            -f body='Groma architecture comparison is not available yet because the base branch has no committed `groma/index.md`. This pull request establishes the baseline; subsequent pull requests will include the before/after architecture map and change summary.'
+            -f body='Groma could not compare this pull request because the base branch has no compatible architecture baseline (it is missing `groma/index.md` or contains system documents outside the canonical `groma/systems/<system-id>/system.md` paths). This pull request establishes a valid baseline; subsequent pull requests will include the before/after architecture map and change summary.'
