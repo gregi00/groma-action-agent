@@ -23,8 +23,19 @@ public class WortEintragController {
     public String startseite(@RequestParam(name = "wort", required = false) String wort, Model model) {
         model.addAttribute("wort", wort == null ? "" : wort);
         model.addAttribute("eintraege", service.alleFinden());
-        model.addAttribute("suchergebnis", wort == null || wort.isBlank() ? null : service.suchen(wort).orElse(null));
         model.addAttribute("sucheAktiv", wort != null && !wort.isBlank());
+        model.addAttribute("suchergebnis", wort == null || wort.isBlank() ? null : service.suchen(wort).orElse(null));
+        model.addAttribute("zuBearbeitenderEintrag", null);
+        return "index";
+    }
+
+    @GetMapping("/eintraege/{id}/bearbeiten")
+    public String bearbeiten(@PathVariable("id") Long id, Model model) {
+        model.addAttribute("wort", "");
+        model.addAttribute("eintraege", service.alleFinden());
+        model.addAttribute("sucheAktiv", false);
+        model.addAttribute("suchergebnis", null);
+        model.addAttribute("zuBearbeitenderEintrag", service.findeNachId(id).orElse(null));
         return "index";
     }
 
@@ -36,6 +47,20 @@ public class WortEintragController {
             service.hinzufuegen(wort, text);
             redirectAttributes.addFlashAttribute("erfolg", "Der Eintrag wurde gespeichert.");
         } catch (IllegalArgumentException | EintragExistiertBereitsException exception) {
+            redirectAttributes.addFlashAttribute("fehler", exception.getMessage());
+        }
+        return "redirect:/";
+    }
+
+    @PostMapping("/eintraege/{id}/bearbeiten")
+    public String aktualisieren(@PathVariable("id") Long id,
+                               @RequestParam("wort") String wort,
+                               @RequestParam("text") String text,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            service.aktualisieren(id, wort, text);
+            redirectAttributes.addFlashAttribute("erfolg", "Der Eintrag wurde bearbeitet.");
+        } catch (IllegalArgumentException | EintragExistiertBereitsException | EintragNichtGefundenException exception) {
             redirectAttributes.addFlashAttribute("fehler", exception.getMessage());
         }
         return "redirect:/";

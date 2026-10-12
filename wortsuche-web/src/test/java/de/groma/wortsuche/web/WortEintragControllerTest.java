@@ -73,4 +73,32 @@ class WortEintragControllerTest {
                 .andExpect(content().string(containsString("Erster Text")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Zweiter Text"))));
     }
+
+    @Test
+    void kannEintragBearbeiten() throws Exception {
+        mockMvc.perform(post("/eintraege")
+                        .param("wort", "Mut")
+                        .param("text", "Alte Beschreibung"))
+                .andExpect(status().is3xxRedirection());
+
+        String seite = mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String id = seite.replaceAll("(?s).*action=\"/eintraege/(\\d+)/bearbeiten\".*", "$1");
+
+        mockMvc.perform(get("/eintraege/{id}/bearbeiten", id))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Änderungen speichern")));
+
+        mockMvc.perform(post("/eintraege/{id}/bearbeiten", id)
+                        .param("wort", "Mut")
+                        .param("text", "Neue Beschreibung"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("erfolg", "Der Eintrag wurde bearbeitet."));
+
+        mockMvc.perform(get("/").param("wort", "Mut"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Neue Beschreibung")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Alte Beschreibung"))));
+    }
 }

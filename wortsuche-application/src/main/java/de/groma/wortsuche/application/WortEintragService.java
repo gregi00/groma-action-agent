@@ -19,6 +19,13 @@ public class WortEintragService {
         return repository.findeAlle();
     }
 
+    public Optional<WortEintrag> findeNachId(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return repository.findeNachId(id);
+    }
+
     public Optional<WortEintrag> suchen(String wort) {
         if (wort == null || wort.isBlank()) {
             return Optional.empty();
@@ -39,6 +46,28 @@ public class WortEintragService {
             throw new EintragExistiertBereitsException(bereinigtesWort);
         }
         return repository.speichern(new WortEintrag(null, bereinigtesWort, bereinigterText));
+    }
+
+    public WortEintrag aktualisieren(Long id, String wort, String text) {
+        if (id == null || repository.findeNachId(id).isEmpty()) {
+            throw new EintragNichtGefundenException();
+        }
+
+        String bereinigtesWort = wort == null ? "" : wort.strip();
+        String bereinigterText = text == null ? "" : text.strip();
+        if (bereinigtesWort.isBlank()) {
+            throw new IllegalArgumentException("Bitte gib ein Wort ein.");
+        }
+        if (bereinigterText.isBlank()) {
+            throw new IllegalArgumentException("Bitte gib einen Text ein.");
+        }
+
+        Optional<WortEintrag> vorhandenerEintrag = repository.findeNachWort(normalisiere(bereinigtesWort));
+        if (vorhandenerEintrag.isPresent() && !vorhandenerEintrag.get().id().equals(id)) {
+            throw new EintragExistiertBereitsException(bereinigtesWort);
+        }
+
+        return repository.speichern(new WortEintrag(id, bereinigtesWort, bereinigterText));
     }
 
     public void loeschen(Long id) {

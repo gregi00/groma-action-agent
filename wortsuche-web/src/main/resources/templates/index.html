@@ -51,13 +51,32 @@
         </div>
         <p class="muted empty" th:if="${eintraege.isEmpty()}">Hier erscheinen deine gespeicherten Wörter.</p>
         <article class="entry" th:each="eintrag : ${eintraege}">
-            <div>
-                <h3 th:text="${eintrag.wort}">Wort</h3>
-                <p th:text="${eintrag.text}">Text</p>
-            </div>
-            <form method="post" th:action="@{/eintraege/{id}/loeschen(id=${eintrag.id})}">
-                <button class="delete-button" type="submit" th:attr="aria-label='Eintrag ' + ${eintrag.wort} + ' löschen'">Löschen</button>
-            </form>
+            <th:block th:if="${zuBearbeitenderEintrag != null and zuBearbeitenderEintrag.id == eintrag.id}">
+                <form class="edit-form" method="post" th:action="@{/eintraege/{id}/bearbeiten(id=${eintrag.id})}">
+                    <label th:for="|wort-${eintrag.id}|">Wort</label>
+                    <input th:id="|wort-${eintrag.id}|" name="wort" maxlength="120" th:value="${eintrag.wort}" required>
+                    <label th:for="|text-${eintrag.id}|">Text</label>
+                    <textarea th:id="|text-${eintrag.id}|" name="text" rows="4" maxlength="5000" required th:text="${eintrag.text}"></textarea>
+                    <div class="entry-actions">
+                        <button type="submit">Änderungen speichern</button>
+                        <a class="secondary-button" th:href="@{/}">Abbrechen</a>
+                    </div>
+                </form>
+            </th:block>
+            <th:block th:unless="${zuBearbeitenderEintrag != null and zuBearbeitenderEintrag.id == eintrag.id}">
+                <div>
+                    <h3 th:text="${eintrag.wort}">Wort</h3>
+                    <p th:text="${eintrag.text}">Text</p>
+                </div>
+                <div class="entry-actions">
+                    <form method="get" th:action="@{/eintraege/{id}/bearbeiten(id=${eintrag.id})}">
+                        <button class="edit-button" type="submit" th:attr="aria-label='Eintrag ' + ${eintrag.wort} + ' bearbeiten'">Bearbeiten</button>
+                    </form>
+                    <form method="post" th:action="@{/eintraege/{id}/loeschen(id=${eintrag.id})}">
+                        <button class="delete-button" type="submit" th:attr="aria-label='Eintrag ' + ${eintrag.wort} + ' löschen'">Löschen</button>
+                    </form>
+                </div>
+            </th:block>
         </article>
     </section>
 </main>

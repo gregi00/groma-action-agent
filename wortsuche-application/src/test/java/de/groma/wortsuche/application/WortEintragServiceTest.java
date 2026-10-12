@@ -38,6 +38,19 @@ class WortEintragServiceTest {
     }
 
     @Test
+    void aktualisiertEintragOhneDoppelteWorterfassung() {
+        WortEintrag vorhandenerEintrag = new WortEintrag(1L, "Hallo", "Eine Begrüßung");
+        WortEintrag aktualisierterEintrag = new WortEintrag(1L, "Hallo", "Neue Begrüßung");
+
+        when(repository.findeNachId(1L)).thenReturn(Optional.of(vorhandenerEintrag));
+        when(repository.findeNachWort("hallo")).thenReturn(Optional.of(vorhandenerEintrag));
+        when(repository.speichern(aktualisierterEintrag)).thenReturn(aktualisierterEintrag);
+
+        assertEquals(aktualisierterEintrag, service.aktualisieren(1L, " Hallo ", " Neue Begrüßung "));
+        verify(repository).speichern(aktualisierterEintrag);
+    }
+
+    @Test
     void findetKeineEintraegeBeiLeeremSuchwort() {
         assertEquals(Optional.empty(), service.suchen("  "));
         verify(repository, org.mockito.Mockito.never()).findeNachWort("  ");
