@@ -35,13 +35,16 @@ organization administrator or GitHub Support.
 
 Keep the Groma architecture in `groma/` up to date when a change affects
 systems, components, or their relationships. The `Groma PR comparison`
-workflow publishes a before/after architecture map and a change summary on
-each pull request. The first pull request that adds this baseline cannot show
-a comparison against an architecture that does not yet exist on the base
-branch; subsequent pull requests can.
+workflow compares the base and proposed revisions on each pull request.
 
-Set the repository's **Settings → Pages → Build and deployment source** to
-**GitHub Actions** so comparison previews can be published. Pull requests from
-the same repository are compared automatically. For a fork pull request, a
-maintainer must run **Actions → Groma PR comparison** manually after review;
-this keeps untrusted fork code out of the publishing job.
+For public repositories, the workflow publishes an interactive before/after
+map to GitHub Pages. For private repositories, where this Groma publisher does
+not support PR previews, it posts the change summary and a link to the
+interactive comparison artifact on the workflow run. Artifacts are available
+to repository members for 30 days. The first pull request that adds this
+baseline cannot compare against a compatible architecture on the base branch;
+subsequent pull requests can.
+
+For a fork pull request, a maintainer must run **Actions → Groma PR
+comparison** manually after review; this keeps untrusted fork code out of the
+publishing job.
