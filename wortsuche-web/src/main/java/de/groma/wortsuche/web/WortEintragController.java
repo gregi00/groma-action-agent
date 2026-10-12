@@ -6,6 +6,7 @@ import de.groma.wortsuche.application.WortEintragService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -40,8 +41,11 @@ public class WortEintragController {
         return "redirect:/";
     }
 
-    @PostMapping("/eintraege/loeschen")
-    public String loeschen(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+    @PostMapping(value = {"/eintraege/loeschen", "/eintraege/{id}/loeschen"})
+    public String loeschen(@PathVariable(name = "id", required = false) Long pathId,
+                           @RequestParam(name = "id", required = false) Long requestId,
+                           RedirectAttributes redirectAttributes) {
+        Long id = pathId != null ? pathId : requestId;
         try {
             service.loeschen(id);
             redirectAttributes.addFlashAttribute("erfolg", "Der Eintrag wurde gelöscht.");

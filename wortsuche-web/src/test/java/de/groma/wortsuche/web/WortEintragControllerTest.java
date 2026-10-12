@@ -38,9 +38,9 @@ class WortEintragControllerTest {
         String seite = mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        String id = seite.replaceAll("(?s).*name=\"id\" value=\"(\\d+)\".*", "$1");
+        String id = seite.replaceAll("(?s).*action=\"/eintraege/(\\d+)/loeschen\".*", "$1");
 
-        mockMvc.perform(post("/eintraege/loeschen").param("id", id))
+        mockMvc.perform(post("/eintraege/{id}/loeschen", id))
                 .andExpect(status().is3xxRedirection());
 
         mockMvc.perform(get("/").param("wort", "Zuversicht"))
