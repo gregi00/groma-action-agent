@@ -11,6 +11,7 @@ files directly; follow the generated guide.
 ## Issue handling
 
 Follow `.github/copilot-instructions.md` when working on GitHub issues. Bug
-issues should be fixed and delivered in a linked pull request. Feature issues
-must receive a proposed implementation summary and explicit `/implement`
-approval before code changes begin.
+issues assigned to Copilot should be fixed and delivered in a linked pull
+request. Assigning Copilot to a feature issue is approval to implement it;
+unassigned feature issues require a proposed implementation summary and
+explicit `/implement` approval before code changes begin.

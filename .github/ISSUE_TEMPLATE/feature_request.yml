@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Feature requests receive an implementation proposal first. Work starts only after an explicit `/implement` approval.
+        Assign Copilot to this issue to authorize implementation. If it is not assigned to Copilot, an implementation proposal and `/implement` approval are required before work begins.
   - type: textarea
     id: problem
     attributes:

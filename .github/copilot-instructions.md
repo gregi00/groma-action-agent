@@ -11,10 +11,11 @@ When working on an issue in this repository:
   Otherwise, make the smallest appropriate fix, add or update tests, run
   relevant checks, and open a pull request linked to the issue.
 - For an issue labeled `enhancement`, first comment with the proposed changes,
-  affected areas, and important assumptions. Do not edit files or open a pull
-  request until the issue author or a maintainer explicitly approves by
-  commenting `/implement`. After approval, implement the feature, run relevant
-  checks, and open a pull request linked to the issue.
+  affected areas, and important assumptions if the issue is not assigned to
+  Copilot. Assignment to Copilot is explicit approval to implement the feature:
+  implement it, run relevant checks, and open a pull request linked to the
+  issue without waiting for a separate `/implement` comment. If the feature
+  issue is not assigned to Copilot, wait for `/implement` before changing files.
 - Keep `groma/` architecture documentation current when a change affects
   architecture. Every pull request must include the Groma before/after
   comparison comment produced by `.github/workflows/groma-pr.yml`; if the
