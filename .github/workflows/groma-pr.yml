@@ -58,6 +58,12 @@ jobs:
         run: |
           git fetch --no-tags origin "$HEAD"
           echo "from=$(git merge-base "$BASE" "$HEAD")" >> "$GITHUB_OUTPUT"
+      - name: Ensure Groma scanner configuration
+        if: steps.groma-baseline.outputs.available == 'true'
+        run: |
+          if [ ! -f groma/scanners.json ]; then
+            printf '{\n  "scanners": []\n}\n' > groma/scanners.json
+          fi
       - uses: MrLesk/groma.md-action@v1
         id: map
         if: steps.groma-baseline.outputs.available == 'true'
